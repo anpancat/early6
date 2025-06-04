@@ -51,9 +51,6 @@ export default function WritingTest() {
   const [warning, setWarning] = useState("");
   const [missingWords, setMissingWords] = useState([]);
 
-  const [showSurveyModal, setShowSurveyModal] = useState(false);
-  const [surveyCompleted, setSurveyCompleted] = useState(false);
-  const [surveyAnswers, setSurveyAnswers] = useState([null, null, null, null]);
   const [startTypingFlow, setStartTypingFlow] = useState(false);  // 최초 트리거 시점
 
 
@@ -138,12 +135,12 @@ export default function WritingTest() {
   useEffect(() => {
     if (wordCount >= 20 && !hasTriggeredOnce) {
       setIsInputDisabled(true); // ✅ 입력창 비활성화 추가
-      setShowSurveyModal(true); // 설문 팝업 띄우기
+      setHasTriggeredOnce(true); // 바로 다음 단계로 진행
     }
   }, [wordCount, hasTriggeredOnce]);
 
 useEffect(() => {
-    if (hasTriggeredOnce && surveyCompleted) {
+    if (hasTriggeredOnce) {
       // 출력창 초기화 + 타이핑 효과 시작
       setDisplayText("");
       setTypingIndex(0);
@@ -161,7 +158,7 @@ useEffect(() => {
     
       return () => clearTimeout(timer); // 혹시 컴포넌트 unmount 시 타이머 제거
     }
-  }, [hasTriggeredOnce, surveyCompleted]);
+  }, [hasTriggeredOnce]);
 
   // 🪶 typingText 타이핑 효과 처리
   useEffect(() => {
@@ -241,7 +238,7 @@ useEffect(() => {
     if (isPreTextTyping && preTextIndex >= predefinedText.length) {
       setTimeout(() => {
         if (!originalText.endsWith(predefinedText)) {
-          setText(originalText + " " + predefinedText);   // 글 뒤에 예시문장 삽입입
+          setText(originalText + " " + predefinedText);   // 글 뒤에 예시문장 삽입
         } else {
           setText(originalText);   // 이미 삽입된 경우 유지
         }
@@ -346,14 +343,9 @@ useEffect(() => {
       const formattedKoreaTime = formatter.format(koreaTime);
 
       //firebase에 UID 포함하여 데이터에 저장
-      await addDoc(collection(db, "초기-6"), {
+      await addDoc(collection(db, "초기-4"), {
         SONAId: prolificId.trim(), // ✨ prolific ID 저장
         timestamp: formattedKoreaTime,  // ✅ 한국 시간으로 변환한 값 저장
-        // ✨ 설문 응답 추가 저장
-        PO_q1: surveyAnswers[0],
-        PO_q2: surveyAnswers[1],
-        PO_q3: surveyAnswers[2],
-        PO_q4: surveyAnswers[3],
         selectedExampleIndex: selectedExampleIndex, // 선택한 predefinedText 번호 저장
         exampleWordSource: exampleWordSetLabel, // 어떤 예시단어셋을 기준으로 했는지 저장
         exampleWordCount: exampleWordCount, // 예시단어 매칭개수
@@ -396,7 +388,7 @@ useEffect(() => {
 
         <textarea
           style={{ width: "100%", height: "200px", padding: "10px", border: "1px solid #ccc", fontSize: "16px" }}
-          value={isPreTextTyping ? preTextTyping + originalText : text}
+          value={isPreTextTyping ? originalText + " " + preTextTyping : text}
           onChange={(e) => handleChange(e)}
           placeholder="여기에 글을 작성해주세요..."
           disabled={isInputDisabled} // ✅ 비활성화 반영
@@ -495,12 +487,12 @@ useEffect(() => {
                 <div style={{ marginTop: "20px", backgroundColor: "#fff", padding: "15px", border: "1px dashed #aaa", borderRadius: "6px" }}>
                   <p style={{ fontWeight: "bold" }}>다음 중 당신의 글에 넣을 문장을 한가지 선택해주세요:</p>
 
-                  {[predefinedText1, predefinedText2, predefinedText3, predefinedText4, predefinedText5, predefinedText6].map((text, idx) => (
+                  {[predefinedText1, predefinedText2, predefinedText3, predefinedText4].map((text, idx) => (
                     <p key={idx}><strong>{idx + 1}.</strong> {text}</p>
                   ))}
 
                   <div style={{ marginTop: "10px", display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                    {[1, 2, 3, 4, 5, 6].map((index) => (
+                    {[1, 2, 3, 4].map((index) => (
                       <button
                         key={index}
                         onClick={() => handleExampleChoice(index)}
@@ -539,87 +531,6 @@ useEffect(() => {
         }}>
         제출하기
       </button>
-
-      {showSurveyModal && (
-        <div style={{
-          position: "fixed",
-          top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: "rgba(0,0,0,0.5)",
-          display: "flex", justifyContent: "center", alignItems: "center",
-          zIndex: 9999
-        }}>
-          <div style={{
-            backgroundColor: "white",
-            padding: "30px",
-            borderRadius: "10px",
-            width: "600px",
-            boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
-            maxHeight: "90vh", overflowY: "auto"
-          }}>
-            <p>아래 문항에 동의하는 정도를 응답해주시기 바랍니다(1 =  전혀 그렇지 않다 ~ 7 = 매우 그렇다).</p>
-
-            {[
-              "나만의 것을 만들어낸 것 같은 느낌이 들었다.",
-              "내가 이 과제를 수행한 것에 대해 모든 공로를 받을 자격이 있다고 느꼈다.",
-              '스스로 "내가 해냈어!"라고 생각했다.',
-              "최종 결과물에 대한 소유감을 느꼈다."
-            ].map((question, qIndex) => (
-              <div key={qIndex} style={{ marginTop: "30px" }}>
-                <p style={{ marginBottom: "10px", fontWeight: "bold" }}>{question}</p>
-                
-                {/* 숫자 + 라벨 줄 */}
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px", alignItems: "center" }}>
-                  {[1, 2, 3, 4, 5, 6, 7].map((val, idx) => (
-                    <div key={val} style={{ flex: 1, textAlign: "center", fontSize: "12px", fontWeight: "bold", lineHeight: "1.4" }}>
-                      <div>{idx === 0 ? "전혀 그렇지 않다" : idx === 6 ? "매우 그렇다" : "\u00A0"}</div>
-                      <div>{val}</div>
-                    </div>
-                  ))}
-                </div>
-                
-                {/* 라디오 동그라미 줄 */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  {[1, 2, 3, 4, 5, 6, 7].map((val) => (
-                    <label key={val} style={{ textAlign: "center", flex: 1 }}>
-                      <input
-                        type="radio"
-                        name={`q${qIndex}`}
-                        value={val}
-                        checked={surveyAnswers[qIndex] === val}
-                        onChange={() => {
-                          const newAnswers = [...surveyAnswers];
-                          newAnswers[qIndex] = val;
-                          setSurveyAnswers(newAnswers);
-                        }}
-                      />
-                    </label>
-                  ))}
-                </div>
-              </div>
-            ))}
-
-            <button
-              disabled={surveyAnswers.includes(null)}
-              onClick={() => {
-                setShowSurveyModal(false);
-                setSurveyCompleted(true);
-                setHasTriggeredOnce(true);
-              }}
-              style={{
-                marginTop: "30px",
-                padding: "10px 20px",
-                backgroundColor: surveyAnswers.includes(null) ? "#ccc" : "#007bff",
-                color: "white",
-                border: "none",
-                cursor: surveyAnswers.includes(null) ? "not-allowed" : "pointer",
-                fontWeight: "bold"
-              }}
-          >
-              글쓰기 계속하기
-            </button>
-          </div>
-        </div>
-      )}
 
     </div>
   );
