@@ -15,8 +15,7 @@ export default function WritingTest() {
   const predefinedText2 = "예시문장2 ";
   const predefinedText3 = "예시문장3 ";
   const predefinedText4 = "예시문장4 ";
-  const predefinedText5 = "예시문장5 ";
-  const predefinedText6 = "예시문장6 ";
+
   const [preTextIndex, setPreTextIndex] = useState(0);
   const [isPreTextTyping, setIsPreTextTyping] = useState(""); // 타이핑 중인 글자 저장
   const [preTextTyping, setPreTextTyping] = useState("");   // 타이핑 중인 글자
@@ -30,14 +29,12 @@ export default function WritingTest() {
   const examplePhrase2 = ["예시 구문2"];
   const examplePhrase3 = ["예시 구문3"];
   const examplePhrase4 = ["예시 구문4"];
-  const examplePhrase5 = ["예시 구문5"];
-  const examplePhrase6 = ["예시 구문6"];
+
   const exampleKeywords1 = ["따스한", "햇살", "골목길", "비추고", "나뭇잎", "사이", "부는", "바람", "잔잔한", "소리", "냈다", "담벼락", "고양이", "졸고", "있었고", "창문", "너머", "김", "서린", "찻잔", "보였다", "조용한", "거리", "어울리지", "않게", "어디선가", "작은", "발소리", "들려오고", "고개", "들어", "난", "곳", "찾아", "두리번거리자", "멀리서", "낯선", "그림자", "발견했다"]; // 예시 단어들
   const exampleKeywords2 = ["예시 단어2"];
   const exampleKeywords3 = ["예시 단어3"];
   const exampleKeywords4 = ["예시 단어4"];
-  const exampleKeywords5 = ["예시 단어5"];
-  const exampleKeywords6 = ["예시 단어6"];
+
 
   const [typingIndex, setTypingIndex] = useState(0);
   const [helloIndex, setHelloIndex] = useState(0);
@@ -128,8 +125,6 @@ export default function WritingTest() {
       2: predefinedText2,
       3: predefinedText3,
       4: predefinedText4,
-      5: predefinedText5,
-      6: predefinedText6,
     };
 
     const chosenText = choiceMap[choiceIndex] || "";
@@ -245,15 +240,15 @@ useEffect(() => {
   
     if (isPreTextTyping && preTextIndex >= predefinedText.length) {
       setTimeout(() => {
-        if (!originalText.startsWith(predefinedText)) {
-          setText(predefinedText + originalText);   // 최종 텍스트 반영
+        if (!originalText.endsWith(predefinedText)) {
+          setText(originalText + " " + predefinedText);   // 글 뒤에 예시문장 삽입입
         } else {
           setText(originalText);   // 이미 삽입된 경우 유지
         }
 
         // ✅ 여기서 단어 수 갱신
-        const finalText = !originalText.startsWith(predefinedText)
-          ? predefinedText + originalText
+        const finalText = !originalText.endsWith(predefinedText)
+          ? originalText + " " + predefinedText
           : originalText;
 
         const words = finalText.trim().split(/\s+/);
@@ -306,8 +301,6 @@ useEffect(() => {
         2: exampleKeywords2,
         3: exampleKeywords3,
         4: exampleKeywords4,
-        5: exampleKeywords5,
-        6: exampleKeywords6,
       };
 
       const phraseMap = {
@@ -315,8 +308,6 @@ useEffect(() => {
         2: examplePhrase2,
         3: examplePhrase3,
         4: examplePhrase4,
-        5: examplePhrase5,
-        6: examplePhrase6,
       };
 
       // 매칭 계산
